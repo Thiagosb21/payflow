@@ -37,6 +37,7 @@ aws:
   region: us-east-1
   access-key: localstack
   secret-key: localstack
-
+  sns:
+    topic-arn: arn:aws:sns:us-east-1:000000000000:payment-notifications
 server:
   port: 8080

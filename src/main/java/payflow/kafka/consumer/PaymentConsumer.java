@@ -7,6 +7,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import payflow.dto.PaymentEventMessage;
 import payflow.enums.PaymentStatus;
+import payflow.service.AwsNotificationService;
 import payflow.service.PaymentService;
 
 @Slf4j
@@ -16,6 +17,7 @@ public class PaymentConsumer {
 
     private final PaymentService paymentService;
     private final ObjectMapper objectMapper;
+    private final AwsNotificationService awsNotificationService;
 
     @KafkaListener(topics = "payments", groupId = "payflow-group")
     public void consume(String message) {
@@ -30,6 +32,11 @@ public class PaymentConsumer {
             PaymentStatus finalStatus = approved ? PaymentStatus.APPROVED : PaymentStatus.FAILED;
             paymentService.updateStatus(event.getPaymentId(), finalStatus);
 
+            awsNotificationService.notifyPaymentFinished(
+                    event.getPaymentId().toString(),
+                    finalStatus.name()
+            );
+
             log.info("Pagamento {} finalizado com status {}", event.getPaymentId(), finalStatus);
 
         } catch (Exception e) {
@@ -38,7 +45,6 @@ public class PaymentConsumer {
     }
 
     private boolean simulateProcessing(PaymentEventMessage event) {
-        // Simula um gateway de pagamento: 90% de aprovação
         return Math.random() > 0.1;
     }
 }
